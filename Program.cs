@@ -1,8 +1,6 @@
 ﻿using System.IO.Ports;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Remoting.Channels;
-using System.Diagnostics;
 
 namespace GunIO
 {
@@ -29,9 +27,10 @@ namespace GunIO
                 SerialPort.Parity = Parity.None;
                 SerialPort.StopBits = StopBits.One;
                 SerialPort.RtsEnable = true;
-                SerialPort.DtrEnable = true;
-                SerialPort.Handshake = Handshake.None;
+                SerialPort.ReadTimeout = 1000;
+                SerialPort.ReceivedBytesThreshold = 1;
                 SerialPort.DataReceived += new SerialDataReceivedEventHandler(ReceiveData);
+                SerialPort.ErrorReceived += (sender, e) => { SendUnityDebug(e.ToString()); };
                 SerialPort.Open();
                 
                 
@@ -92,6 +91,7 @@ namespace GunIO
         /// <param name="e"></param>
         private static void ReceiveData(object sender, SerialDataReceivedEventArgs e)
         {
+            
             SendUnityDebug("收到数据");
             SerialPort serialPort = (SerialPort)sender;
             SendUnityDebug("sender：" + serialPort.PortName);
@@ -147,6 +147,8 @@ namespace GunIO
                 cmd = cmd,
                 data = dataList.ToArray()
             });
+
+            serialPort.DiscardInBuffer();
 
 
         }
