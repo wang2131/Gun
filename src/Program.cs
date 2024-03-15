@@ -8,7 +8,13 @@ namespace GunIO
     public class Port
     {
      
+        /// <summary>
+        /// port接收信息事件
+        /// </summary>
         public static event EventHandler<GunIOEventArgs> dataReceived;
+        /// <summary>
+        /// 自定义日志事件
+        /// </summary>
         public static event EventHandler<CustomLogEventArgs> customLogReceived;
 
         private static SerialPort _SerialPort;
@@ -17,6 +23,12 @@ namespace GunIO
         private static bool _keepReading;
         private static bool _prepareToReceive;
 
+        /// <summary>
+        /// 开启Port
+        /// </summary>
+        /// <param name="comName">端口名</param>
+        /// <param name="baud">波特率</param>
+        /// <returns></returns>
         public static SerialPort OpenPort(string comName, int baud)
         {
             _bufferList = new List<byte>();
@@ -44,12 +56,15 @@ namespace GunIO
                 }
                 else
                 {
-                    SendUnityDebug("串口打开成功");
+                    _SendUnityDebug("串口打开成功");
                 }
             }
             return _SerialPort;
         }
 
+        /// <summary>
+        /// 关闭Port
+        /// </summary>
         public static void ClosePort()
         {
             if (_SerialPort != null && _SerialPort.IsOpen)
