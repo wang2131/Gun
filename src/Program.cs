@@ -2,64 +2,62 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Runtime.CompilerServices;
 
 namespace GunIO
 {
     public class Port
     {
+     
+        public static event EventHandler<GunIOEventArgs> dataReceived;
+        public static event EventHandler<UnityMessageEventArgs> unityMessageReceived;
 
-        public static SerialPort SerialPort;
-        public static List<byte> bufferList;
-        public static event EventHandler<GunIOEventArgs> DataReceived;
-        public static event EventHandler<UnityMessageEventArgs> UnityMessageReceived;
-
-
+        private static SerialPort _SerialPort;
+        private static List<byte> _bufferList;
         private static Thread _readThread;
         private static bool _keepReading;
         private static bool _prepareToReceive;
 
         public static SerialPort OpenPort(string comName, int baud)
         {
-            bufferList = new List<byte>();
-            if (SerialPort == null || !SerialPort.IsOpen)
+            _bufferList = new List<byte>();
+            if (_SerialPort == null || !_SerialPort.IsOpen)
             {
-                
-                SerialPort = new SerialPort();
-                SerialPort.PortName = comName;
-                SerialPort.BaudRate = baud;
-                SerialPort.DataBits = 8;
-                SerialPort.Parity = Parity.None;
-                SerialPort.StopBits = StopBits.One;
-                SerialPort.ReadTimeout = 1000;
+
+                _SerialPort = new SerialPort();
+                _SerialPort.PortName = comName;
+                _SerialPort.BaudRate = baud;
+                _SerialPort.DataBits = 8;
+                _SerialPort.Parity = Parity.None;
+                _SerialPort.StopBits = StopBits.One;
+                _SerialPort.ReadTimeout = 1000;
                
               
-                SerialPort.ErrorReceived += (sender, e) => { SendUnityDebug(e.ToString()); };
-                SerialPort.Open();
+                _SerialPort.ErrorReceived += (sender, e) => { _SendUnityDebug(e.ToString()); };
+                _SerialPort.Open();
                 _keepReading = true;
-                _readThread = new Thread(ReadPort);
+                _readThread = new Thread(_ReadPort);
                 _readThread.Start();
                 
-                if (!SerialPort.IsOpen)
+                if (!_SerialPort.IsOpen)
                 {
-                    SendUnityDebug("串口打开失败");
+                    _SendUnityDebug("串口打开失败");
                 }
                 else
                 {
-                    SendUnityDebug("串口打开成功");
+                    _SendUnityDebug("串口打开成功");
                 }
             }
-            return SerialPort;
+            return _SerialPort;
         }
 
         public static void ClosePort()
         {
-            if (SerialPort != null && SerialPort.IsOpen)
+            if (_SerialPort != null && _SerialPort.IsOpen)
             {
                 _readThread.Abort();
-                SerialPort.Close();
-                SerialPort.Dispose();
-                SendUnityDebug("串口已关闭");
+                _SerialPort.Close();
+                _SerialPort.Dispose();
+                _SendUnityDebug("串口已关闭");
             }
         }
 
@@ -70,7 +68,7 @@ namespace GunIO
         /// <param name="data"></param>
         public static void SendData(byte cmd, byte[] data)
         {
-            if (SerialPort != null && SerialPort.IsOpen)
+            if (_SerialPort != null && _SerialPort.IsOpen)
             {
                 List<byte> list = new List<byte>();
                 byte length = (byte)(data.Length + 2);
@@ -81,12 +79,12 @@ namespace GunIO
                 list.Add(checkSum);
                 list.Insert(0, 0xAA);
                 list.Add(0xDD);
-                SerialPort.Write(list.ToArray(), 0, list.Count);
+                _SerialPort.Write(list.ToArray(), 0, list.Count);
                 
             }
             else
             {
-                SendUnityDebug("串口未找到");
+                _SendUnityDebug("串口未找到");
             }
         }
 
@@ -108,7 +106,7 @@ namespace GunIO
             }
             else
             {
-                SendUnityDebug("校验错误");
+                _SendUnityDebug("校验错误");
                 return false;
             }
            
@@ -131,24 +129,24 @@ namespace GunIO
             return sum;
         }
 
-        private static void SendUnityDebug(string message)
+        private static void _SendUnityDebug(string message)
         {
-            UnityMessageReceived.Invoke(SerialPort, new UnityMessageEventArgs
+            unityMessageReceived.Invoke(_SerialPort, new UnityMessageEventArgs
             {
                 message = message
             });
         }
 
-        private static void ReadPort()
+        private static void _ReadPort()
         {
             while(_keepReading)
             {
-                if(SerialPort.IsOpen)
+                if(_SerialPort.IsOpen)
                 {
-                    byte[] readBuffer = new byte[SerialPort.ReadBufferSize + 1];
+                    byte[] readBuffer = new byte[_SerialPort.ReadBufferSize + 1];
                     try
                     {
-                        int count = SerialPort.Read(readBuffer, 0, SerialPort.ReadBufferSize);
+                        int count = _SerialPort.Read(readBuffer, 0, _SerialPort.ReadBufferSize);
                         if (count!=0)
                         {
                             if (readBuffer[0] == 0xAA && !_prepareToReceive)
@@ -159,7 +157,7 @@ namespace GunIO
                             else
                             {
                                 //SendUnityDebug(BitConverter.ToString(readBuffer));
-                                ReceiveData(readBuffer);
+                                _ReceiveData(readBuffer);
                                 _prepareToReceive = false;
                             }
                             
@@ -179,15 +177,15 @@ namespace GunIO
             }
         }
 
-        private static void ReceiveData(byte[] data)
+        private static void _ReceiveData(byte[] data)
         {
-            bufferList.AddRange(data);
-            int length = (int)bufferList[0]+1;
-            List<byte> effectedList = bufferList.GetRange(0, length);
-            bufferList.RemoveRange(0, length);
-            if (bufferList[0] != 0xDD)
+            _bufferList.AddRange(data);
+            int length = (int)_bufferList[0]+1;
+            List<byte> effectedList = _bufferList.GetRange(0, length);
+            _bufferList.RemoveRange(0, length);
+            if (_bufferList[0] != 0xDD)
             {
-                SendUnityDebug("传输错误，结尾不为0xDD");
+                _SendUnityDebug("传输错误，结尾不为0xDD");
                 
             }
             else
@@ -201,7 +199,7 @@ namespace GunIO
                     byte cmd = effectedList[0];
                     effectedList.RemoveAt(0);
                     byte[] bytes = effectedList.ToArray();
-                    DataReceived.Invoke(SerialPort, new GunIOEventArgs
+                    dataReceived.Invoke(_SerialPort, new GunIOEventArgs
                     {
                         cmd = cmd,
                         data = bytes
@@ -209,10 +207,10 @@ namespace GunIO
                 }
                 else
                 {
-                    SendUnityDebug("校验错误");
+                    _SendUnityDebug("校验错误");
                 }
             }
-            bufferList.Clear();
+            _bufferList.Clear();
         }
 
 
