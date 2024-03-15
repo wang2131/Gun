@@ -56,6 +56,7 @@ namespace GunIO
         {
             if (SerialPort != null && SerialPort.IsOpen)
             {
+                _readThread.Abort();
                 SerialPort.Close();
                 SerialPort.Dispose();
                 SendUnityDebug("串口已关闭");
@@ -80,7 +81,6 @@ namespace GunIO
                 list.Add(checkSum);
                 list.Insert(0, 0xAA);
                 list.Add(0xDD);
-                SendUnityDebug("SendData:" + BitConverter.ToString(list.ToArray()));
                 SerialPort.Write(list.ToArray(), 0, list.Count);
                 
             }
@@ -158,7 +158,7 @@ namespace GunIO
                             }
                             else
                             {
-                                SendUnityDebug(BitConverter.ToString(readBuffer));
+                                //SendUnityDebug(BitConverter.ToString(readBuffer));
                                 ReceiveData(readBuffer);
                                 _prepareToReceive = false;
                             }
@@ -182,7 +182,7 @@ namespace GunIO
         private static void ReceiveData(byte[] data)
         {
             bufferList.AddRange(data);
-            int length = (int)bufferList[0];
+            int length = (int)bufferList[0]+1;
             List<byte> effectedList = bufferList.GetRange(0, length);
             bufferList.RemoveRange(0, length);
             if (bufferList[0] != 0xDD)
