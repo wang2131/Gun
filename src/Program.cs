@@ -9,7 +9,7 @@ namespace GunIO
     {
      
         public static event EventHandler<GunIOEventArgs> dataReceived;
-        public static event EventHandler<UnityMessageEventArgs> unityMessageReceived;
+        public static event EventHandler<CustomLogEventArgs> customLogReceived;
 
         private static SerialPort _SerialPort;
         private static List<byte> _bufferList;
@@ -44,7 +44,7 @@ namespace GunIO
                 }
                 else
                 {
-                    _SendUnityDebug("串口打开成功");
+                    SendUnityDebug("串口打开成功");
                 }
             }
             return _SerialPort;
@@ -131,7 +131,7 @@ namespace GunIO
 
         private static void _SendUnityDebug(string message)
         {
-            unityMessageReceived.Invoke(_SerialPort, new UnityMessageEventArgs
+            customLogReceived.Invoke(_SerialPort, new CustomLogEventArgs
             {
                 message = message
             });

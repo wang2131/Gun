@@ -10,7 +10,7 @@ namespace GunIO
         public byte[] data;
     }
 
-    public class UnityMessageEventArgs : EventArgs
+    public class CustomLogEventArgs : EventArgs
     {
         public string message;
     }
