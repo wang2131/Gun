@@ -30,7 +30,6 @@ namespace GunIO
                 SerialPort.StopBits = StopBits.One;
                 SerialPort.RtsEnable = true;
                 SerialPort.DtrEnable = true;
-                SerialPort.Handshake = Handshake.None;
                 SerialPort.DataReceived += new SerialDataReceivedEventHandler(ReceiveData);
                 SerialPort.Open();
                 
