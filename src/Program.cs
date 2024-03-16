@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using GunIO.src.Events;
 
 namespace GunIO
 {
@@ -44,7 +45,7 @@ namespace GunIO
                 _SerialPort.ReadTimeout = 1000;
                
               
-                _SerialPort.ErrorReceived += (sender, e) => { _SendUnityDebug(e.ToString()); };
+                _SerialPort.ErrorReceived += (sender, e) => { _SendCustomDebug(e.ToString()); };
                 _SerialPort.Open();
                 _keepReading = true;
                 _readThread = new Thread(_ReadPort);
@@ -52,11 +53,11 @@ namespace GunIO
                 
                 if (!_SerialPort.IsOpen)
                 {
-                    _SendUnityDebug("串口打开失败");
+                    _SendCustomDebug("串口打开失败");
                 }
                 else
                 {
-                    _SendUnityDebug("串口打开成功");
+                    _SendCustomDebug("串口打开成功");
                 }
             }
             return _SerialPort;
@@ -72,7 +73,7 @@ namespace GunIO
                 _readThread.Abort();
                 _SerialPort.Close();
                 _SerialPort.Dispose();
-                _SendUnityDebug("串口已关闭");
+                _SendCustomDebug("串口已关闭");
             }
         }
 
@@ -99,7 +100,7 @@ namespace GunIO
             }
             else
             {
-                _SendUnityDebug("串口未找到");
+                _SendCustomDebug("串口未找到");
             }
         }
 
@@ -121,7 +122,7 @@ namespace GunIO
             }
             else
             {
-                _SendUnityDebug("校验错误");
+                _SendCustomDebug("校验错误");
                 return false;
             }
            
@@ -144,7 +145,7 @@ namespace GunIO
             return sum;
         }
 
-        private static void _SendUnityDebug(string message)
+        internal static void _SendCustomDebug(string message)
         {
             customLogReceived.Invoke(_SerialPort, new CustomLogEventArgs
             {
@@ -200,7 +201,7 @@ namespace GunIO
             _bufferList.RemoveRange(0, length);
             if (_bufferList[0] != 0xDD)
             {
-                _SendUnityDebug("传输错误，结尾不为0xDD");
+                _SendCustomDebug("传输错误，结尾不为0xDD");
                 
             }
             else
@@ -219,10 +220,12 @@ namespace GunIO
                         cmd = cmd,
                         data = bytes
                     });
+
+                    ButtonEvents.Handle(cmd, bytes);
                 }
                 else
                 {
-                    _SendUnityDebug("校验错误");
+                    _SendCustomDebug("校验错误");
                 }
             }
             _bufferList.Clear();
