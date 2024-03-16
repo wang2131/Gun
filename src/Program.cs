@@ -1,14 +1,13 @@
-﻿using System.IO.Ports;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Threading;
-using GunIO;
 
 namespace GunIO
 {
     public class Port
     {
-     
+
         /// <summary>
         /// port接收信息事件
         /// </summary>
@@ -43,14 +42,14 @@ namespace GunIO
                 _SerialPort.Parity = Parity.None;
                 _SerialPort.StopBits = StopBits.One;
                 _SerialPort.ReadTimeout = 1000;
-               
-              
+
+
                 _SerialPort.ErrorReceived += (sender, e) => { _SendCustomDebug(e.ToString()); };
                 _SerialPort.Open();
                 _keepReading = true;
                 _readThread = new Thread(_ReadPort);
                 _readThread.Start();
-                
+
                 if (!_SerialPort.IsOpen)
                 {
                     _SendCustomDebug("串口打开失败");
@@ -96,7 +95,7 @@ namespace GunIO
                 list.Insert(0, 0xAA);
                 list.Add(0xDD);
                 _SerialPort.Write(list.ToArray(), 0, list.Count);
-                
+
             }
             else
             {
@@ -117,7 +116,7 @@ namespace GunIO
         {
             if (CalculateSum(data) == sum)
             {
-                
+
                 return true;
             }
             else
@@ -125,7 +124,7 @@ namespace GunIO
                 _SendCustomDebug("校验错误");
                 return false;
             }
-           
+
         }
 
         /// <summary>
@@ -155,20 +154,20 @@ namespace GunIO
 
         private static void _ReadPort()
         {
-            while(_keepReading)
+            while (_keepReading)
             {
-                if(_SerialPort.IsOpen)
+                if (_SerialPort.IsOpen)
                 {
                     byte[] readBuffer = new byte[_SerialPort.ReadBufferSize + 1];
                     try
                     {
                         int count = _SerialPort.Read(readBuffer, 0, _SerialPort.ReadBufferSize);
-                        if (count!=0)
+                        if (count != 0)
                         {
                             if (readBuffer[0] == 0xAA && !_prepareToReceive)
                             {
                                 _prepareToReceive = true;
-                                
+
                             }
                             else
                             {
@@ -176,7 +175,7 @@ namespace GunIO
                                 _ReceiveData(readBuffer);
                                 _prepareToReceive = false;
                             }
-                            
+
 
                         }
                     }
@@ -196,13 +195,13 @@ namespace GunIO
         private static void _ReceiveData(byte[] data)
         {
             _bufferList.AddRange(data);
-            int length = (int)_bufferList[0]+1;
+            int length = (int)_bufferList[0] + 1;
             List<byte> effectedList = _bufferList.GetRange(0, length);
             _bufferList.RemoveRange(0, length);
             if (_bufferList[0] != 0xDD)
             {
                 _SendCustomDebug("传输错误，结尾不为0xDD");
-                
+
             }
             else
             {
@@ -229,6 +228,10 @@ namespace GunIO
                         case 0x1:
                             Events.Handle01(bytes);
                             break;
+
+                        case 0x2:
+                            Events.Handle02(bytes);
+                            break;
                     }
                 }
                 else
@@ -244,5 +247,5 @@ namespace GunIO
 
     }
 
-    
+
 }

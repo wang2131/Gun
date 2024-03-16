@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO.Ports;
 
 namespace GunIO
 {
@@ -42,10 +41,18 @@ namespace GunIO
         public static EventHandler<ButtonLightEventArgs> buttonLightChanged;
         public static EventHandler<RGBLightEventArgs> rgbLightChanged;
         public static EventHandler<ShakingEventArgs> shaking;
-        
+        public static EventHandler<PotentiometerEventArgs> potentiometer;
+        public static EventHandler<LookUpTableEventArgs> lookUpTable;
+
 
         internal static void Handle00(byte[] data)
         {
+            if (data.Length != 1)
+            {
+                Port._SendCustomDebug("数据传输错误， cmd00");
+                return;
+            }
+
             if (data[0] == 0x00)
             {
                 Port._SendCustomDebug("开机检查中");
@@ -61,14 +68,14 @@ namespace GunIO
         internal static void Handle01(byte[] data)
         {
 
-            if(data.Length != 2)
+            if (data.Length != 2)
             {
                 Port._SendCustomDebug("数据传输错误， cmd01");
                 return;
             }
-               
+
             string str1 = "", str2 = "";
-            for(int i = 7; i >=0; i--)
+            for (int i = 7; i >= 0; i--)
             {
                 str1 += ((int)ByteToBit(data[0], i)).ToString();
                 str2 += ((int)ByteToBit(data[1], i)).ToString();
@@ -77,7 +84,7 @@ namespace GunIO
 
             //******************按键事件******************************************
             byte in11 = ByteToBit(data[1], 0);
-            if(in11 != buttonStates["in11"])
+            if (in11 != buttonStates["in11"])
             {
                 if (in11 == 0x0) in11_ButtonPressed.Invoke(sender, EventArgs.Empty);
                 else in11_ButtonReleased.Invoke(sender, EventArgs.Empty);
@@ -92,8 +99,8 @@ namespace GunIO
                 else in12_ButtonReleased.Invoke(sender, EventArgs.Empty);
 
                 buttonStates["in12"] = in12;
-            }            
-            
+            }
+
             byte in21 = ByteToBit(data[0], 2);
             if (in21 != buttonStates["in21"])
             {
@@ -102,7 +109,7 @@ namespace GunIO
 
                 buttonStates["in21"] = in21;
             }
-                        
+
             byte in22 = ByteToBit(data[0], 3);
             if (in22 != buttonStates["in22"])
             {
@@ -133,7 +140,7 @@ namespace GunIO
             byte in25 = ByteToBit(data[0], 6);
             if (in25 != buttonStates["in25"])
             {
-                if (in25== 0x0) in25_ButtonPressed.Invoke(sender, EventArgs.Empty);
+                if (in25 == 0x0) in25_ButtonPressed.Invoke(sender, EventArgs.Empty);
                 else in25_ButtonReleased.Invoke(sender, EventArgs.Empty);
 
                 buttonStates["in25"] = in25;
@@ -218,13 +225,105 @@ namespace GunIO
 
         internal static void Handle02(byte[] data)
         {
-            if(data.Length != 1)
+            if (data.Length != 1)
             {
                 Port._SendCustomDebug("数据传输错误， cmd02");
                 return;
             }
 
-            
+            byte light0 = ByteToBit(data[0], 7);
+            byte light1 = ByteToBit(data[1], 6);
+            byte light2 = ByteToBit(data[1], 5);
+            byte light3 = ByteToBit(data[1], 4);
+            byte light4 = ByteToBit(data[1], 3);
+            byte light5 = ByteToBit(data[1], 2);
+            byte light6 = ByteToBit(data[1], 1);
+            byte light7 = ByteToBit(data[1], 0);
+
+            buttonLightChanged.Invoke(sender, new ButtonLightEventArgs
+            {
+                light0 = light0,
+                light1 = light1,
+                light2 = light2,
+                light3 = light3,
+                light4 = light4,
+                light5 = light5,
+                light6 = light6,
+                light7 = light7,
+            });
+
+        }
+
+        internal static void Handle03(byte[] data)
+        {
+            if (data.Length != 4)
+            {
+                Port._SendCustomDebug("数据传输错误， cmd03");
+                return;
+            }
+
+            byte id = data[0];
+            byte R = data[1];
+            byte G = data[2];
+            byte B = data[3];
+
+            rgbLightChanged.Invoke(sender, new RGBLightEventArgs
+            {
+                id = id,
+                R = R,
+                G = G,
+                B = B
+            });
+        }
+
+        internal static void Handle05(byte[] data)
+        {
+            if (data.Length != 1)
+            {
+                Port._SendCustomDebug("数据传输错误， cmd05");
+                return;
+            }
+
+            byte states = data[0];
+
+            shaking.Invoke(sender, new ShakingEventArgs
+            {
+                states = states
+            });
+        }
+
+        internal static void Handle06(byte[] data)
+        {
+            if (data.Length != 5)
+            {
+                Port._SendCustomDebug("数据传输错误， cmd06");
+                return;
+            }
+
+            byte player = data[0];
+            byte[] values = new byte[]{
+                data[1], data[2], data[3], data[4]
+            };
+
+            potentiometer.Invoke(sender, new PotentiometerEventArgs
+            {
+                player = player,
+                values = values
+            });
+        }
+
+        internal static void Handle07(byte[] data)
+        {
+            if (data.Length != 2)
+            {
+                Port._SendCustomDebug("数据传输错误， cmd07");
+                return;
+            }
+
+            lookUpTable.Invoke(sender, new LookUpTableEventArgs
+            {
+                values = data
+            });
         }
 
         private static byte ByteToBit(byte b, int bit)
