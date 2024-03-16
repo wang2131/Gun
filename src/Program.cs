@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using GunIO.src.Events;
+using GunIO;
 
 namespace GunIO
 {
@@ -221,7 +221,15 @@ namespace GunIO
                         data = bytes
                     });
 
-                    ButtonEvents.Handle(cmd, bytes);
+                    switch (cmd)
+                    {
+                        case 0x0:
+                            Events.Handle00(bytes);
+                            break;
+                        case 0x1:
+                            Events.Handle01(bytes);
+                            break;
+                    }
                 }
                 else
                 {

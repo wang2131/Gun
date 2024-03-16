@@ -40,9 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\Event.cs" />
-    <Compile Include="src\Events\ButtonEvents.cs" />
-    <Compile Include="src\Events\ButtonState.cs" />
+    <Compile Include="src\EventArgs.cs" />
+    <Compile Include="src\Events\Events.cs" />
+    <Compile Include="src\Events\States.cs" />
     <Compile Include="src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
